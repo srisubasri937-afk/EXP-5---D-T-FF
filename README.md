@@ -12,18 +12,95 @@ Q(next) = D
 ### T Flip-Flop
 Q(next) = T ⊕ Q   (Q(next) = Q if T = 0, Q(next) = Q' if T = 1)
 ## Files to be Created
-<img width="625" height="50" alt="image" src="https://github.com/user-attachments/assets/65034a51-5642-46ac-940a-f7ee975cea9c" />
 
 ## Design / RTL Program
-
-```
+module dff (
+    input  wire clk,   // clock
+    input  wire rst,   // asynchronous active-high reset
+    input  wire D,     // data input
+    output reg  Q      // output
+);
+    always @(posedge clk or posedge rst) begin
+        if (rst)
+            Q <= 1'b0;
+        else
+            Q <= D;
+    end
+endmodule
+ 
+module tff (
+    input  wire clk,   // clock
+    input  wire rst,   // asynchronous active-high reset
+    input  wire T,     // toggle input
+    output reg  Q      // output
+);
+    always @(posedge clk or posedge rst) begin
+        if (rst)
+            Q <= 1'b0;
+        else if (T)
+            Q <= ~Q;
+        else
+            Q <= Q;
+    end
+endmodule
 ## Testbench Program
+module tb5;
+    reg  clk, rst, D, T;
+    wire Qd, Qt;
+ 
+    // Instantiate the D Flip-Flop
+    dff dff_uut (
+        .clk(clk),
+        .rst(rst),
+        .D(D),
+        .Q(Qd)
+    );
+ 
+    // Instantiate the T Flip-Flop
+    tff tff_uut (
+        .clk(clk),
+        .rst(rst),
+        .T(T),
+        .Q(Qt)
+    );
+ 
+    // ---- Clock generation: 10 time-unit period ----
+    initial clk = 0;
+    always #5 clk = ~clk;
+ 
+    initial begin
+        // ---- VCD dump setup ----
+        $dumpfile("dff_tff.vcd");   // name of the VCD file to be generated
+        $dumpvars(0, tb5);            // dump all signals in this testbench hierarchy
+ 
+        $monitor("Time=%0t rst=%b clk=%b | D=%b Qd=%b | T=%b Qt=%b",
+                  $time, rst, clk, D, Qd, T, Qt);
+ 
+        // ---- Apply asynchronous reset ----
+        rst = 1; D = 0; T = 0;
+        #7  rst = 0;
+ 
+        // ---- Apply test vectors on successive clock edges ----
+        @(negedge clk); D = 1; T = 1;
+        @(negedge clk); D = 0; T = 1;
+        @(negedge clk); D = 1; T = 0;
+        @(negedge clk); D = 0; T = 0;
+        @(negedge clk); D = 1; T = 1;
+        @(negedge clk); D = 1; T = 1;
+ 
+        // ---- Apply reset again mid-simulation ----
+        @(negedge clk); rst = 1;
+        @(negedge clk); rst = 0; D = 1; T = 1;
+ 
+        #20 $finish;
+    end
+endmodule
 
 
 
 ## Truth Table
+<img width="396" height="468" alt="experiment 6 truth table" src="https://github.com/user-attachments/assets/0a3c2fda-6671-42e6-9fb9-39b8813cf6c2" />
 
-<img width="349" height="264" alt="image" src="https://github.com/user-attachments/assets/d05e6f9d-ff68-466e-9eb8-52e22fa1b961" />
 
 ## Simulation Procedure
 
@@ -79,29 +156,12 @@ Q(next) = T ⊕ Q   (T Flip-Flop)
 The design was compiled and simulated using Synopsys VCS, and the functionality was verified using DVE waveform analysis, matching the expected truth table.
 
 **## Output**
+<img width="1600" height="847" alt="experiment 5" src="https://github.com/user-attachments/assets/5395f75d-1cbf-4186-bd1f-4b5a6b2d4e76" />
+<img width="1600" height="825" alt="output2" src="https://github.com/user-attachments/assets/7ad30dd6-5b03-402b-98f0-4d6a2f8453e8" />
 
 
-## Viva-Voce Questions
 
-●	What is the difference between a latch and a flip-flop?
 
-●	Why is the D flip-flop also called a 'delay' element?
-
-●	How is a T flip-flop derived from a JK flip-flop?
-
-●	What is the characteristic equation of a T flip-flop, and what does it mean when T = 1?
-
-●	What is the difference between synchronous and asynchronous reset? Which one is used here?
-
-●	Why is posedge used in the sensitivity list, and what does 'posedge clk or posedge rst' achieve?
-
-●	What is the purpose of a Verilog testbench?
-
-●	Why is a VCD file generated, and what does $dumpvars(0, tb) do?
-
-●	How would you construct a T flip-flop using a D flip-flop and an XOR gate?
-
-●	How can a chain of T flip-flops be used to build an asynchronous binary counter?
 
 ## Result
 
